@@ -5,10 +5,11 @@ import (
 
 	"github.com/YousefAldabbas/auth-service/pkg/model"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepo struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
 func (ur UserRepo) GetUserByUUID(userUUID string) (model.User, error) {

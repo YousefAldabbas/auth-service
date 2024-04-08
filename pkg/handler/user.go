@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/YousefAldabbas/auth-service/pkg/model"
@@ -9,6 +10,8 @@ import (
 	"github.com/YousefAldabbas/auth-service/pkg/utils"
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog/log"
 )
 
@@ -58,11 +61,10 @@ func (uh UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	user := model.User{
 		Username: body.Username,
-		UUID: uuid.New().String(),
-		Email: body.Email,
+		UUID:     uuid.New().String(),
+		Email:    body.Email,
 	}
 
 	hashedPassword, err := utils.HashPassword(body.Password)
@@ -75,16 +77,22 @@ func (uh UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = hashedPassword
 
-
 	err = uh.Repo.InsertUser(&user)
+	var e *pgconn.PgError
+
 	if err != nil {
+		if errors.As(err, &e) && e.Code == pgerrcode.UniqueViolation {
+			log.Error().Err(err).Msg("Unique violation error")
+			utils.ResponseWithJSON(w, http.StatusConflict, "User already exists")
+			return
+		}
 		log.Error().Err(err).Msg("Unable to insert user to the database")
-		utils.ResponseWithJSON(w, http.StatusInternalServerError, "SERVER ERROR")
+
+		utils.ResponseWithJSON(w, http.StatusInternalServerError, "Server error: Unable to insert user to the database.")
 		return
 	}
 
-
 	w.WriteHeader(201)
-	utils.ResponseWithJSON(w,201, user)
+	utils.ResponseWithJSON(w, 201, user)
 
 }
