@@ -1,0 +1,39 @@
+.
+├── bin
+│   └── server
+├── cmd
+│   └── server
+│       └── main.go
+├── data
+│   ├── seed
+│   └── static
+│       └── business.json
+├── go.mod
+├── go.sum
+├── internal
+│   ├── config
+│   │   ├── dbconfig.go
+│   │   └── env.go
+│   ├── database
+│   │   └── db.go
+│   └── routes
+│       └── route.go
+├── Makefile
+├── pkg
+│   ├── handlers
+│   │   └── business.go
+│   ├── middlewares
+│   ├── migrations
+│   ├── models
+│   ├── repositories
+│   ├── utils
+│   │   ├── cache.go
+│   │   └── logger.go
+│   └── validators
+├── profiles
+│   ├── dev.env
+│   ├── local.env
+│   ├── prod.env
+│   └── uat.env
+├── scripts
+└── tests
