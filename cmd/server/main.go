@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,7 +14,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 
 	// "github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	// "github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
@@ -28,7 +29,7 @@ func main() {
 
 type App struct {
 	Router *chi.Mux
-	DB     *pgxpool.Pool
+	DB     *sql.DB
 }
 
 func (a *App) Init() error {

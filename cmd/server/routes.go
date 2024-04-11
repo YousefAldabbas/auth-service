@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -16,14 +15,14 @@ func (a *App) LoadRoutes() {
 		uh := handler.UserHandler{Repo: repository.UserRepo{
 			DB: a.DB,
 		}}
-		r.Get("/{userUUID}", uh.GetUserByUUID)
 		r.Post("/", uh.RegisterNewUser)
+		r.Post("/login", uh.Login)
+		r.Get("/{userUUID}", uh.GetUserByUUID)
 	})
 
 	a.Router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
 
-		err := a.DB.Ping(ctx)
+		err := a.DB.Ping()
 
 		if err != nil {
 			w.WriteHeader(500)
@@ -31,9 +30,7 @@ func (a *App) LoadRoutes() {
 			return
 		}
 
-
 		w.WriteHeader(200)
-
 
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"message": "OK",

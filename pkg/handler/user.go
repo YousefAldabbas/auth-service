@@ -1,13 +1,14 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/YousefAldabbas/auth-service/pkg/model"
 	"github.com/YousefAldabbas/auth-service/pkg/repository"
-	"github.com/YousefAldabbas/auth-service/pkg/utils"
+	"github.com/YousefAldabbas/auth-service/utils"
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
@@ -48,7 +49,7 @@ func (h UserHandler) GetUserByUUID(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (uh UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
+func (h UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
 
 	var body struct {
 		Username string `json:"username"`
@@ -77,7 +78,7 @@ func (uh UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
 
 	user.Password = hashedPassword
 
-	err = uh.Repo.InsertUser(&user)
+	err = h.Repo.InsertUser(&user)
 	var e *pgconn.PgError
 
 	if err != nil {
@@ -96,3 +97,48 @@ func (uh UserHandler) RegisterNewUser(w http.ResponseWriter, r *http.Request) {
 	utils.ResponseWithJSON(w, 201, user)
 
 }
+
+func (h UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		log.Error().Err(err).Msg("Error decoding request body")
+		utils.ResponseWithJSON(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	user, err := h.Repo.GetUserByUsername(body.Username)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error().Err(err).Msg("user not found")
+			utils.ResponseWithJSON(w, http.StatusNotFound, "User not found")
+			return
+		}
+		log.Error().Err(err)
+		utils.ResponseWithJSON(w, http.StatusConflict, err)
+		return
+	}
+
+	if ok := utils.Match(body.Password, user.Password); !ok {
+		log.Error().Err(err)
+		utils.ResponseWithJSON(w, http.StatusConflict, "Invalid Password") //change later
+	}
+
+	accessToken, err := utils.GenerateJWT(user)
+
+	if err != nil {
+		log.Error().Err(err).Msg("failed to generate access token")
+		utils.ResponseWithJSON(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	utils.ResponseWithJSON(w, 200, accessToken)
+
+}
+
+
